@@ -7,11 +7,13 @@ import me.chanjar.weixin.common.session.WxSessionManager;
 import me.chanjar.weixin.common.util.http.MediaUploadRequestExecutor;
 import me.chanjar.weixin.common.util.http.RequestExecutor;
 import me.chanjar.weixin.common.util.http.RequestHttp;
-import me.chanjar.weixin.cp.bean.*;
+import me.chanjar.weixin.cp.bean.WxCpMaJsCode2SessionResult;
+import me.chanjar.weixin.cp.bean.WxCpMessage;
+import me.chanjar.weixin.cp.bean.WxCpMessageSendResult;
 import me.chanjar.weixin.cp.config.WxCpConfigStorage;
 
 /**
- * 微信API的Service
+ * 微信API的Service.
  * @author chanjaster
  */
 public interface WxCpService {
@@ -68,6 +70,33 @@ public interface WxCpService {
   String getJsapiTicket(boolean forceRefresh) throws WxErrorException;
 
   /**
+   * 获得jsapi_ticket,不强制刷新jsapi_ticket
+   * 应用的jsapi_ticket用于计算agentConfig（参见“通过agentConfig注入应用的权限”）的签名，签名计算方法与上述介绍的config的签名算法完全相同，但需要注意以下区别：
+   *
+   * 签名的jsapi_ticket必须使用以下接口获取。且必须用wx.agentConfig中的agentid对应的应用secret去获取access_token。
+   * 签名用的noncestr和timestamp必须与wx.agentConfig中的nonceStr和timestamp相同。
+   * @see #getJsapiTicket(boolean)
+   */
+  String getAgentJsapiTicket() throws WxErrorException;
+
+  /**
+   * <pre>
+   * 获取应用的jsapi_ticket
+   * 应用的jsapi_ticket用于计算agentConfig（参见“通过agentConfig注入应用的权限”）的签名，签名计算方法与上述介绍的config的签名算法完全相同，但需要注意以下区别：
+   *
+   * 签名的jsapi_ticket必须使用以下接口获取。且必须用wx.agentConfig中的agentid对应的应用secret去获取access_token。
+   * 签名用的noncestr和timestamp必须与wx.agentConfig中的nonceStr和timestamp相同。
+   *
+   * 获得时会检查jsapiToken是否过期，如果过期了，那么就刷新一下，否则就什么都不干
+   *
+   * 详情请见：https://work.weixin.qq.com/api/doc#10029/%E8%8E%B7%E5%8F%96%E5%BA%94%E7%94%A8%E7%9A%84jsapi_ticket
+   * </pre>
+   *
+   * @param forceRefresh 强制刷新
+   */
+  String getAgentJsapiTicket(boolean forceRefresh) throws WxErrorException;
+
+  /**
    * <pre>
    * 创建调用jsapi时所需要的签名
    *
@@ -87,6 +116,13 @@ public interface WxCpService {
    * @param message 要发送的消息对象
    */
   WxCpMessageSendResult messageSend(WxCpMessage message) throws WxErrorException;
+
+  /**
+   * 小程序登录凭证校验
+   *
+   * @param jsCode 登录时获取的 code
+   */
+  WxCpMaJsCode2SessionResult jsCode2Session(String jsCode) throws WxErrorException;
 
   /**
    * <pre>
@@ -165,6 +201,13 @@ public interface WxCpService {
   WxSession getSession(String id, boolean create);
 
   /**
+   * 获取WxSessionManager 对象
+   *
+   * @return WxSessionManager
+   */
+  WxSessionManager getSessionManager();
+  
+  /**
    * <pre>
    * 设置WxSessionManager，只有当需要使用个性化的WxSessionManager的时候才需要调用此方法，
    * WxCpService默认使用的是{@link me.chanjar.weixin.common.session.StandardSessionManager}
@@ -242,12 +285,30 @@ public interface WxCpService {
    */
   WxCpUserService getUserService();
 
+  WxCpExternalContactService getExternalContactService();
+
+  /**
+   * 获取群聊服务
+   * 
+   * @return 群聊服务
+   */
+  WxCpChatService getChatService();
+
+  /**
+   * 获取任务卡片服务
+   *
+   * @return 任务卡片服务
+   */
+  WxCpTaskCardService getTaskCardService();
+
   WxCpAgentService getAgentService();
+
+  WxCpOaService getOAService();
 
   /**
    * http请求对象
    */
-  RequestHttp getRequestHttp();
+  RequestHttp<?, ?> getRequestHttp();
 
   void setUserService(WxCpUserService userService);
 
